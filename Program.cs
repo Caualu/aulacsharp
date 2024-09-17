@@ -1,20 +1,97 @@
-﻿double numero;
-int numero2;
-bool validador = true;
-while (validador == true)
+﻿using Telegram.Bot;
+using Telegram.Bot.Polling;
+using Telegram.Bot.Types;
+using Telegram.Bot.Types.Enums;
+using Telegram.Bot.Exceptions;
+
+
+class Program
 {
-    Console.Write("Digite um número inteiro:");
-    numero = Convert.ToDouble(Console.ReadLine());
-    numero2 = (int)numero;
-    if (numero2 != numero)
+    // Coloque seu token do bot aqui
+    private static readonly string BotToken = "7426380200:AAG_hWzMwfrR1iiR6aHlzxE-vBSraOcU0IY";
+    private static TelegramBotClient botClient;
+
+    static void Main(string[] args)
     {
-        Console.WriteLine("Erro! Não é um número inteiro");
+        // Inicializa o cliente do bot com o token
+        botClient = new TelegramBotClient(BotToken);
+
+        // Configurações para o recebimento de mensagens
+        var receiverOptions = new ReceiverOptions
+        {
+            AllowedUpdates = Array.Empty<UpdateType>() // Recebe todos os tipos de atualizações
+        };
+
+        // Inicia o recebimento de atualizações
+        botClient.StartReceiving(HandleUpdateAsync, HandleErrorAsync, receiverOptions);
+
+        Console.WriteLine("Bot iniciado. Pressione qualquer tecla para parar o bot...");
+        Console.ReadKey();
+
+        // Para o recebimento de mensagens
+        botClient.CloseAsync().Wait();
     }
-    else
+
+    // Método para processar as atualizações (mensagens)
+    private static async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, CancellationToken cancellationToken)
     {
-        validador = false;
+        // Apenas processa mensagens de texto
+        if (update.Type == UpdateType.Message && update.Message!.Text != null)
+        {
+            var message = update.Message;
+
+            Console.WriteLine($"Recebi uma mensagem de {message.Chat.FirstName}: {message.Text}");
+
+            // Verificar perguntas sobre o Rio de Janeiro
+            string resposta = ProcessarPerguntaSobreRio(message.Text.ToLower());
+
+            // Enviar a resposta para o usuário
+            await botClient.SendTextMessageAsync(
+                chatId: message.Chat.Id,
+                text: resposta
+            );
+        }
+    }
+
+    // Método para processar perguntas relacionadas ao Rio de Janeiro
+    private static string ProcessarPerguntaSobreRio(string pergunta)
+    {
+        if (pergunta.Contains("boa noite"))
+        {
+            return "Seja bem vindo. sinta-se em casa.";
+        }
+
+        else if (pergunta.Contains("oi") ||
+         pergunta.Contains("ola") ||
+         pergunta.Contains("bom dia") ||
+         pergunta.Contains("boa tarde") ||
+         pergunta.Contains("boa noite") ||
+         pergunta.Contains("e aí") ||
+         pergunta.Contains("fala") ||
+         pergunta.Contains("salve"))
+        {
+            return "Oi, tudo bem";
+        }
+        else if (pergunta.Contains("aquario"))
+        {
+            return "O conceito de manter peixes em um recipiente não é moderno. Um dos primeiros registros de aquários foi na antiga Babilônia, por volta de 2000 a.C. No entanto, aquários como os conhecemos hoje começaram a se popularizar no século XIX.";
+        }
+
+        else
+        {
+            return "Ih rapazzz, não sei nada sobre isso não";
+        }
+    }
+    // Método para lidar com erros
+    private static Task HandleErrorAsync(ITelegramBotClient botClient, Exception exception, CancellationToken cancellationToken)
+    {
+        var ErrorMessage = exception switch
+        {
+            ApiRequestException apiRequestException => $"Erro na API do Telegram:\n{apiRequestException.ErrorCode}\n{apiRequestException.Message}",
+            _ => exception.ToString()
+        };
+
+        Console.WriteLine(ErrorMessage);
+        return Task.CompletedTask;
     }
 }
-Console.Write("O número é inteiro ");
-
-
